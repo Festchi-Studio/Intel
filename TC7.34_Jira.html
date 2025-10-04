@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HORIZIA Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Firebase App (the core Firebase SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<!-- Firebase Auth -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+    :root{ --accent:#2563eb; --muted:#475569; }
+    body {
+      font-family: Inter, Arial, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #ffffff;
+      padding: 14px 20px;
+      display: flex;
+      gap:12px;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+      flex-wrap: wrap;
+    }
+    header h1{ margin:0; font-size:20px; color:var(--accent); }
+    header img{ width:100px }
+    .datetime{ font-size:13px; color:var(--muted) }
+
+    .container{
+      max-width:1200px; margin:28px auto; padding:0 20px; flex-grow:1;
+    }
+    .integrations{
+      display:flex; gap:12px; align-items:center; justify-content:center; background:#fbfdff; padding:18px; border-radius:10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+    }
+    .integration { background:#fff; padding:16px; border-radius:8px; min-width:200px; text-align:center; box-shadow:0 6px 12px rgba(0,0,0,0.04) }
+
+    .grid{ display:flex; gap:18px; flex-wrap:wrap; margin-top:20px; }
+    .card{ background:#ffffff; padding:16px; border-radius:10px; box-shadow:0 6px 14px rgba(0,0,0,0.06); text-align:center; flex:1; min-width:220px; }
+    .card h2{ margin:8px 0 }
+    button{ margin-top:10px; padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:600; background:var(--accent); color:white }
+    button.ghost{ background:transparent; color:var(--accent); border:1px solid rgba(37,99,235,0.12) }
+    button.header-btn { margin: 0; padding: 8px 18px; font-size: 16px; }
+
+    .body-actions { display: flex; gap: 10px; margin: 20px 0 0 0; flex-wrap: wrap; }
+
+    footer{ text-align:center; padding:18px; font-size:13px; background:#ffffff; color:var(--muted); box-shadow:0 -4px 8px rgba(0,0,0,0.04) }
+
+    .modal{ display:none; position:fixed; z-index:1000; left:0;top:0;width:100%;height:100%; background: rgba(0,0,0,0.45); justify-content:center; align-items:center }
+    .modal-content{ background:#fff; padding:18px; border-radius:12px; max-width:1000px; width:96%; color:#0f172a; box-shadow:0 8px 28px rgba(2,6,23,0.2); max-height:90vh; overflow:auto }
+    .modal-header{ display:flex; align-items:center; justify-content:space-between }
+    .close{ cursor:pointer; font-size:22px; color:var(--muted) }
+
+    #loginPage{ display:none; height:100vh; align-items:center; justify-content:center; background: linear-gradient(180deg,#f8fafc,#ffffff); position:fixed; top:0; left:0; width:100%; z-index:100; }
+    .login-box{ background:#fff; padding:24px; border-radius:12px; box-shadow:0 10px 30px rgba(2,6,23,0.06); width:360px }
+    .input{ width:100%; padding:10px; border-radius:8px; border:1px solid #e6eef9; margin-bottom:10px }
+
+    #chatbox{ position:fixed; bottom:18px; right:18px; width:320px; background:#ffffff; border-radius:12px; box-shadow:0 6px 20px rgba(2,6,23,0.12); display:flex; flex-direction:column; overflow:hidden; z-index:2000 }
+    #chatbox-header{ background:var(--accent); color:white; padding:10px; font-weight:700; cursor:pointer }
+    #chatbox-messages{ padding:10px; max-height:300px; overflow:auto; font-size:14px }
+    .msg{ margin:6px 0 }
+    .user{ text-align:right; color:var(--accent) }
+    .ai{ text-align:left; color:var(--muted) }
+    #chatbox-input{ display:flex; border-top:1px solid #eef2ff }
+    #chatbox-input input{ flex:1; padding:10px; border:0; outline:none }
+
+    .heatmap{ display:grid; grid-template-columns: repeat(6,40px); gap:6px; justify-content:center; }
+    .heatcell{ width:40px; height:40px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; color:white }
+
+    .map-canvas{ width:100%; height:420px; background:linear-gradient(180deg,#fbfdff,#fff); border-radius:8px; padding:12px; box-sizing:border-box }
+
+    table{ width:100%; border-collapse:collapse }
+    th,td{ padding:8px; border-bottom:1px solid #eef2ff; text-align:left }
+
+    #jiraResults ul { margin:10px 0 0 0; padding:0 0 0 18px; }
+</style>
+</head>
+<body>
+  <!-- LANDING PAGE -->
+  <div id="landingPage">
+    <!-- ... unchanged ... -->
+    <!-- Omitted for brevity, same as your original HTML ... -->
+  </div>
+
+  <!-- LOGIN PAGE -->
+  <div id="loginPage">
+    <!-- ... unchanged ... -->
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    <header>
+      <!-- ... unchanged ... -->
+    </header>
+    <div class="container">
+      <div class="body-actions" id="bodyActions">
+        <button class="ghost" onclick="openModal('roadmap')">Delivery Roadmap</button>
+        <button class="ghost" onclick="openModal('dependencies')">Cross-team Map</button>
+        <button class="ghost" onclick="openModal('blockers')">Blockers Heatmap</button>
+        <button class="ghost" onclick="openModal('risks')">Risk Alerts</button>
+      </div>
+      <div class="integrations">
+        <div class="integration">
+          <h3>Jira</h3>
+          <p style="margin:6px 0">Issues, sprints & backlog</p>
+          <button onclick="openModal('jira')">Connect Jira</button>
+        </div>
+        <!-- ... unchanged ... -->
+      </div>
+      <!-- ... main cards unchanged ... -->
+    </div>
+    <footer>
+      <p>© 2025 HORIZIA — Team Collaboration Dashboard</p>
+    </footer>
+  </div>
+
+  <!-- GLOBAL MODAL -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-content" id="modalContent">
+      <div class="modal-header">
+        <h3 id="modalTitle">Modal</h3>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <!-- AI Chatbox -->
+  <div id="chatbox" style="display:none;">
+    <div id="chatbox-header" onclick="toggleChat()">🤖 AI Assistant</div>
+    <div id="chatbox-messages"></div>
+    <div id="chatbox-input">
+      <input id="chatInput" placeholder="Ask me about the project..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    // ... all your auth and dashboard JS unchanged ...
+
+    // MODAL LOGIC
+    function openModal(key){
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const modal = document.getElementById('modal');
+      body.innerHTML = '';
+      if(key==='jira'){
+        title.textContent='Connect Jira';
+        body.innerHTML = `
+          <p>Enter your Jira Cloud domain, email, API token and project key.<br>
+          <b>Note:</b> Your credentials are sent securely to the backend.</p>
+          <input class="input" id="jiraUrl" placeholder="yourcompany.atlassian.net" />
+          <input class="input" id="jiraEmail" placeholder="Email" />
+          <input class="input" id="jiraToken" type="password" placeholder="API token" />
+          <input class="input" id="jiraProject" placeholder="Project key (e.g. DEMO)" />
+          <button style="margin-top:8px;" onclick="fetchJiraIssuesBackend()">Fetch Issues</button>
+          <div id="jiraResults" style="margin-top:10px;"></div>
+        `;
+      }
+      // ... rest unchanged ...
+      modal.style.display='flex';
+    }
+
+    // BACKEND INTEGRATION FOR JIRA
+    async function fetchJiraIssuesBackend() {
+      const JIRA_DOMAIN = document.getElementById('jiraUrl').value.trim();
+      const JIRA_EMAIL = document.getElementById('jiraEmail').value.trim();
+      const JIRA_TOKEN = document.getElementById('jiraToken').value.trim();
+      const PROJECT_KEY = document.getElementById('jiraProject').value.trim();
+      let resultsDiv = document.getElementById('jiraResults');
+      resultsDiv.innerHTML = '<div style="color:var(--muted)">Loading...</div>';
+      try {
+        const response = await fetch('http://localhost:5000/api/jira', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain: JIRA_DOMAIN,
+            email: JIRA_EMAIL,
+            apiToken: JIRA_TOKEN,
+            projectKey: PROJECT_KEY
+          })
+        });
+        const data = await response.json();
+        if (response.status !== 200) throw new Error(data.error || "Failed to fetch Jira data");
+        if (!data.issues || !data.issues.length) {
+          resultsDiv.innerHTML = "<div>No issues found for project key.</div>";
+          return;
+        }
+        let summaryList = "<ul>";
+        data.issues.forEach(issue => {
+          summaryList += `<li><b>${issue.key}</b>: ${issue.fields.summary}</li>`;
+        });
+        summaryList += "</ul>";
+        resultsDiv.innerHTML = summaryList;
+      } catch (err) {
+        resultsDiv.innerHTML = `<div style="color:red;">${err.message}</div>`;
+      }
+    }
+
+    // ... rest of your dashboard JS unchanged ...
+  </script>
+</body>
+</html>
